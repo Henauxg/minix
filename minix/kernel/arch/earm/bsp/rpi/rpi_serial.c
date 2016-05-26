@@ -25,7 +25,7 @@ static struct pl011_serial pl011_serial = {
 
 static kern_phys_map serial_phys_map;
 
-/* 
+/*
  * In kernel serial for the RPi. The serial driver like most other
  * drivers needs to be started early and even before the MMU is turned on.
  * We start by directly accessing the hardware memory address. Later on
@@ -54,15 +54,15 @@ bsp_ser_init()
 	assert(pl011_serial.base);
 
 	/* Set UART to 115200 bauds */
-	if (BOARD_IS_RPI_3_B(machine.board_id)) {
-		/* UARTCLK=3MHz */
-		mmio_write(pl011_serial.base + PL011_IBRD, 26);
-		mmio_write(pl011_serial.base + PL011_FBRD, 3);
-	}
-	else if (BOARD_IS_RPI_2_B(machine.board_id)) {
+	if (BOARD_IS_RPI_2_B(machine.board_id)) {
 		/* UARTCLK=48MHz */
 		mmio_write(pl011_serial.base + PL011_IBRD, 1);
 		mmio_write(pl011_serial.base + PL011_FBRD, 40);
+	}
+	else if (BOARD_IS_RPI_3_B(machine.board_id)) {
+		/* UARTCLK=3MHz */
+		mmio_write(pl011_serial.base + PL011_IBRD, 26);
+		mmio_write(pl011_serial.base + PL011_FBRD, 3);
 	}
 
 	mmio_write(pl011_serial.base + PL011_LCRH, 0x70);

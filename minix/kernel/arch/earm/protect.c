@@ -146,6 +146,7 @@ void arch_boot_proc(struct boot_image *ip, struct proc *rp)
 		execi.allocmem_prealloc_junk = libexec_pg_alloc;
 		execi.allocmem_prealloc_cleared = libexec_pg_alloc;
 		execi.allocmem_ondemand = libexec_pg_alloc;
+		execi.clearproc = NULL;
 
 		/* parse VM ELF binary and alloc/map it into bootstrap pagetable */
 		if(libexec_load_elf(&execi) != OK)

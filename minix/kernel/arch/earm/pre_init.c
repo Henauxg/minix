@@ -182,7 +182,7 @@ int overlaps(multiboot_module_t *mod, int n, int cmp_mod)
 #define MB_MODS_BASE  0x02000000
 #define MB_MODS_ALIGN 0x00800000 /* 8 MB */
 #define MB_MMAP_START 0x00010000
-#define MB_MMAP_SIZE  0x30000000 /* 256 MB */
+#define MB_MMAP_SIZE  0x30000000 /* 768 MB */
 
 multiboot_module_t mb_modlist[MB_MODS_NR];
 multiboot_memory_map_t mb_memmap;
@@ -385,32 +385,18 @@ kinfo_t *pre_init(int argc, char **argv)
          * is the program name (load address) and the rest are
 	 * arguments. by convention the second argument is the
 	 *  command line */
-
 	if (argc != 2) {
 		POORMANS_FAILURE_NOTIFICATION;
 	}
+
 	bootargs = argv[1];
 	set_machine_id(bootargs);
-
-	/* Set up GPIO for PL011 UART */
-#define RPI_GPFSEL1   0x3f200004
-#define RPI_GPPUD     0x3f200094
-#define RPI_GPPUDCLK0 0x3f200098
-	*(volatile int*)RPI_GPFSEL1 = (*(volatile int*)(RPI_GPFSEL1) & ~0x3f000) | 0x24000;
-	*(volatile int*)RPI_GPPUD = 0;
-	for (int delay = 150; delay; delay--);
-	*(volatile int*)RPI_GPPUD = 0;
-	for (int delay = 150; delay; delay--);
-	*(volatile int*)RPI_GPPUDCLK0=  (0x3 << 15);
-	for (int delay = 150; delay; delay--);
-	*(volatile int*)RPI_GPPUDCLK0 = 0;
-
 	bsp_ser_init();
-
 	/* Get our own copy boot params pointed to by ebx.
 	 * Here we find out whether we should do serial output.
 	 */
 	get_parameters(&kinfo, bootargs);
+
 	/* Make and load a pagetable that will map the kernel
 	 * to where it should be; but first a 1:1 mapping so
 	 * this code stays where it should be.

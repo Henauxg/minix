@@ -1,5 +1,5 @@
-#ifndef _OMAP_SERIAL_H
-#define _OMAP_SERIAL_H
+#ifndef _RPI_SERIAL_H
+#define _RPI_SERIAL_H
 
 #define RPI3_PL011_DEBUG_UART_BASE 0x3f201000
 
@@ -20,4 +20,4 @@ void bsp_ser_putc(char c);
 
 #endif /* __ASSEMBLY__ */
 
-#endif /* _OMAP_SERIAL_H */
+#endif /* _RPI_SERIAL_H */

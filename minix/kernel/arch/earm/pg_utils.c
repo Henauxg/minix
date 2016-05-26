@@ -185,7 +185,6 @@ int pg_mapkernel(void)
 {
 	int pde;
 	u32_t mapped = 0, kern_phys = kern_phys_start;
-
 	assert(!(kern_vir_start % ARM_SECTION_SIZE));
 	assert(!(kern_phys_start % ARM_SECTION_SIZE));
 	pde = kern_vir_start / ARM_SECTION_SIZE; /* start pde */
@@ -231,13 +230,13 @@ void vm_enable_paging(void)
 
 	/* Enable barriers */
 	sctlr |= CPU_CONTROL_32BD_ENABLE;
-#if 0
+
 	/* Enable L2 cache (cortex-a8) */
 	#define CORTEX_A8_L2EN   (0x02)
 	actlr = read_actlr();
 	actlr |= CORTEX_A8_L2EN;
 	write_actlr(actlr);
-#endif
+
 	write_sctlr(sctlr);
 }
 
@@ -245,7 +244,6 @@ phys_bytes pg_load()
 {
 	phys_bytes phpagedir = vir2phys(pagedir);
 	write_ttbr0(phpagedir);
-
 	return phpagedir;
 }
 

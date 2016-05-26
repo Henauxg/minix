@@ -1,5 +1,5 @@
 #
-# BSP for TI hardware
+# BSP for RPI hardware
 #
 
 .PATH: ${.CURDIR}/arch/${MACHINE_ARCH}/bsp/rpi

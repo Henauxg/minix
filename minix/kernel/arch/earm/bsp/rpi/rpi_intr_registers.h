@@ -14,14 +14,4 @@
 #define RPI3_INTR_DISABLE2      0x220
 #define RPI3_INTR_DISABLE_BASIC 0x224
 
-#define RPI3_IRQ_ARMTIMER       3
-
-/*
-#define RPI3_IRQ_TIMER3   3
-#define RPI3_INTR_LOCAL_BASE              0x40000000
-#define RPI3_INTR_GPU_ROUTING             0x0c
-#define RPI3_INTR_LOCAL_MBOX_PENDING_CPU0 0x50
-#define RPI3_INTR_LOCAL_INTC_PENDING_CPU0 0x60
-*/
-
 #endif /* _RPI_INTR_H */

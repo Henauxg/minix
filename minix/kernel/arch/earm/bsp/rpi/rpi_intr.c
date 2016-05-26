@@ -65,11 +65,10 @@ intr_init(const int auto_eoi)
 	mmio_write(rpi3_intr.base + RPI3_INTR_DISABLE1, 0xFFFFFFFF);
 	mmio_write(rpi3_intr.base + RPI3_INTR_DISABLE2, 0xFFFFFFFF);
 
-	/*
-	 * Enable ARM timer routing to IRQ here.
-	 */
+	/* Enable ARM timer routing to IRQ here */
 	mmio_write(rpi3_intr.core_base + QA7_CORE0TIMER, 0x8);
 
+	/* Register dummy irq handlers */
 	put_irq_handler(&dummy8_irq_hook, 8, dummy_irq_handler);
 	put_irq_handler(&dummy41_irq_hook, 41, dummy_irq_handler);
 	put_irq_handler(&dummy51_irq_hook, 51, dummy_irq_handler);
