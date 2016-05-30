@@ -25,6 +25,7 @@ RAMDISK_DEVICES="
 	c1d2 c1d2p0 c1d2p0s0 c1d3 c1d3p0 c1d3p0s0
 	c1d4 c1d4p0 c1d4p0s0 c1d5 c1d5p0 c1d5p0s0
 	c1d6 c1d6p0 c1d6p0s0 c1d7 c1d7p0 c1d7p0s0
+	fb0
 	fd0 fd1 fd0p0 fd1p0
 	pci
 	ttyc1 ttyc2 ttyc3 tty00 tty01 tty02 tty03
@@ -118,6 +119,7 @@ Where key is one of the following:
   tsl2550b{1,3}s39	  # TSL2550 Ambient Light Sensors
   sht21b{1,3}s40	  # SHT21 Relative Humidity and Temperature Sensors
   bmp085b{1,3}s77	  # BMP085 Pressure and Temperature Sensors
+  fb0			  # Frame Buffer device
   fd0 fd1 ...		  # Floppy devices for drive 0, 1, ...
   fd0p0 fd1p0 ...	  # Make floppy partitions fd0p[0-3], fd1p[0-3], ...
   c0d0 c0d1 ...		  # Make disks c0d0, c0d1, ...

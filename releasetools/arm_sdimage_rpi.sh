@@ -19,6 +19,7 @@ then
 	. ${SETTINGS_MINIX}
 fi
 
+BSP_NAME=rpi
 : ${ARCH=evbearm-el}
 : ${TOOLCHAIN_TRIPLET=arm-elf32-minix-}
 : ${BUILDSH=build.sh}
@@ -83,11 +84,29 @@ do
 done
 ${CROSS_PREFIX}objcopy ${OBJ}/minix/kernel/kernel -O binary ${ROOT_DIR}/kernel.bin
 # create packer
-${CROSS_PREFIX}as ${RELEASETOOLSDIR}/rpi-bootloader/bootloader.S -o ${RELEASETOOLSDIR}/rpi-bootloader/bootloader.o
-${CROSS_PREFIX}ld ${RELEASETOOLSDIR}/rpi-bootloader/bootloader.o -o ${RELEASETOOLSDIR}/rpi-bootloader/bootloader.elf -Ttext=0x8000 2> /dev/null
-${CROSS_PREFIX}objcopy -O binary ${RELEASETOOLSDIR}/rpi-bootloader/bootloader.elf ${ROOT_DIR}/minix_rpi2.bin
+${CROSS_PREFIX}as ${RELEASETOOLSDIR}/rpi-bootloader/bootloader2.S -o ${RELEASETOOLSDIR}/rpi-bootloader/bootloader2.o
+${CROSS_PREFIX}as ${RELEASETOOLSDIR}/rpi-bootloader/bootloader3.S -o ${RELEASETOOLSDIR}/rpi-bootloader/bootloader3.o
+${CROSS_PREFIX}ld ${RELEASETOOLSDIR}/rpi-bootloader/bootloader2.o -o ${RELEASETOOLSDIR}/rpi-bootloader/bootloader2.elf -Ttext=0x8000 2> /dev/null
+${CROSS_PREFIX}ld ${RELEASETOOLSDIR}/rpi-bootloader/bootloader3.o -o ${RELEASETOOLSDIR}/rpi-bootloader/bootloader3.elf -Ttext=0x8000 2> /dev/null
+${CROSS_PREFIX}objcopy -O binary ${RELEASETOOLSDIR}/rpi-bootloader/bootloader2.elf ${ROOT_DIR}/minix_rpi2.bin
+${CROSS_PREFIX}objcopy -O binary ${RELEASETOOLSDIR}/rpi-bootloader/bootloader3.elf ${ROOT_DIR}/minix_rpi3.bin
 # pack modules
 (cd ${ROOT_DIR} && cat <<EOF | cpio -o --format=newc >> ${ROOT_DIR}/minix_rpi2.bin 2>/dev/null
+kernel.bin
+mod01_ds.elf
+mod02_rs.elf
+mod03_pm.elf
+mod04_sched.elf
+mod05_vfs.elf
+mod06_memory.elf
+mod07_tty.elf
+mod08_mfs.elf
+mod09_vm.elf
+mod10_pfs.elf
+mod11_init.elf
+EOF
+)
+(cd ${ROOT_DIR} && cat <<EOF | cpio -o --format=newc >> ${ROOT_DIR}/minix_rpi3.bin 2>/dev/null
 kernel.bin
 mod01_ds.elf
 mod02_rs.elf
@@ -107,7 +126,7 @@ cp -r releasetools/rpi-firmware/* ${ROOT_DIR}
 # Write GPU config file
 cat <<EOF >${ROOT_DIR}/config.txt
 [pi3]
-kernel=minix_rpi2.bin
+kernel=minix_rpi3.bin
 enable_uart=1
 dtoverlay=pi3-disable-bt
 
@@ -127,4 +146,4 @@ echo ""
 echo "Disk image at `pwd`/${IMG}"
 echo ""
 echo "To boot this image on kvm:"
-echo "qemu-system-arm -M raspi2 -drive if=sd,cache=writeback,format=raw,file=`pwd`/${IMG}"
+echo "qemu-system-arm -M raspi2 -drive if=sd,cache=writeback,format=raw,file=$(pwd)/${IMG} -bios ${ROOT_DIR}/minix_rpi2.bin"

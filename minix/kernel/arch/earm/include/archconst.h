@@ -3,7 +3,6 @@
 #define _ARM_ACONST_H
 
 #include <machine/interrupt.h>
-#include <machine/memory.h>
 #include <machine/cpu.h>
 #include <arm/armreg.h>
 

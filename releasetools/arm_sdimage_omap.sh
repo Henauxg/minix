@@ -19,8 +19,8 @@ then
 	. ${SETTINGS_MINIX}
 fi
 
+BSP_NAME=omap
 : ${ARCH=evbearm-el}
-: ${OBJ=../obj.${ARCH}}
 : ${TOOLCHAIN_TRIPLET=arm-elf32-minix-}
 : ${BUILDSH=build.sh}
 

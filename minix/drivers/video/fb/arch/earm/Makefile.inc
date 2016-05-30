@@ -4,4 +4,10 @@
 HERE=${.CURDIR}/arch/${MACHINE_ARCH}
 .PATH:  ${HERE}
 
-SRCS +=	fb_arch_rpi.c
+.if ${BSP_NAME} == rpi
+SRCS=	fb_arch_rpi.c
+.elif ${BSP_NAME} == omap
+SRCS=	fb_arch_omap.c
+.else
+.error Unknown bsp ${BSP_NAME}
+.endif

@@ -1,4 +1,3 @@
-.text
 _start:
 	ldr	sp, =stack_top
 
@@ -315,15 +314,6 @@ memcpy_done:
 	pop	{r5-r11}
 	bx	lr
 
-argv:
-	.word	argv0
-	.word	argv1
-	.word	0x0
-argv0:
-	.asciz "0x00200000"
-argv1:
-	.asciz "board_name=RPI_2_B console=tty00"
-
 msg_empty:
 	.asciz ""
 msg_banner:
@@ -340,8 +330,3 @@ msg_size:
 	.asciz " size:0x"
 msg_addr:
 	.asciz "    address:0x"
-
-.data
-.align 4
-	.space 256
-stack_top:

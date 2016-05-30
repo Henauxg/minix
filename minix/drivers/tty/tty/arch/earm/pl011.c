@@ -37,31 +37,6 @@
  */
 #define RS_OLOWWATER   (1 * RS_OBUFSIZE / 4)
 
-/* Macros to handle flow control.
- * Interrupts must be off when they are used.
- * Time is critical - already the function call for outb() is annoying.
- * If outb() can be done in-line, tests to avoid it can be dropped.
- * istart() tells external device we are ready by raising RTS.
- * istop() tells external device we are not ready by dropping RTS.
- * DTR is kept high all the time (it probably should be raised by open and
- * dropped by close of the device).
- * OUT2 is also kept high all the time.
- */
-// #define istart(rs) \
-// 	(serial_out((rs), OMAP3_MCR, UART_MCR_OUT2|UART_MCR_RTS|UART_MCR_DTR),\
-// 		(rs)->idevready = TRUE)
-// #define istop(rs) \
-// 	(serial_out((rs), OMAP3_MCR, UART_MCR_OUT2|UART_MCR_DTR), \
-// 		(rs)->idevready = FALSE)
-
-/* Macro to tell if device is ready.  The rs->cts field is set to UART_MSR_CTS
- * if CLOCAL is in effect for a line without a CTS wire.
- */
-// #define devready(rs) ((serial_in(rs, OMAP3_MSR) | rs->cts) & UART_MSR_CTS)
-
-/* Macro to tell if transmitter is ready. */
-#define txready(rs) (serial_in(rs, OMAP3_LSR) & UART_LSR_THRE)
-
 /* RS232 device structure, one per device. */
 typedef struct rs232 {
   tty_t *tty;			/* associated TTY structure */
@@ -95,14 +70,7 @@ typedef struct rs232 {
 
   phys_bytes phys_base;		/* UART physical base address (I/O map) */
   unsigned int reg_offset;	/* UART register offset */
-  unsigned int ier;		/* copy of ier register */
-  unsigned int scr;		/* copy of scr register */
-  unsigned int fcr;		/* copy of fcr register */
-  unsigned int dll;		/* copy of dll register */
-  unsigned int dlh;		/* copy of dlh register */
   unsigned int uartclk;		/* UART clock rate */
-
-  unsigned char lstatus;	/* last line status */
   int rx_overrun_events;
 
   int irq;			/* irq for this line */
@@ -119,21 +87,6 @@ typedef struct uart_port {
 	phys_bytes base_addr;
 	int irq;
 } uart_port_t;
-
-/* OMAP3 UART base addresses. */
-// static uart_port_t dm37xx_ports[] = {
-//   { OMAP3_UART1_BASE, 72},	/* UART1 */
-//   { OMAP3_UART2_BASE, 73},	/* UART2 */
-//   { OMAP3_UART3_BASE, 74},	/* UART3 */
-//   { 0, 0 }
-// };
-
-// static uart_port_t am335x_ports[] = {
-//   {  0x44E09000 , 72 },	/* UART0 */
-//   { 0, 0 },
-//   { 0, 0 },
-//   { 0, 0 }
-// };
 
 static uart_port_t bcm2835_ports[] = {
 	{ PL011_UART0_BASE, 121 },	/* UART0 */
@@ -156,8 +109,6 @@ static int rs_close(tty_t *tp, int try);
 static int rs_open(tty_t *tp, int try);
 static void rs232_handler(rs232_t *rs);
 static void rs_reset(rs232_t *rs);
-static unsigned int check_modem_status(rs232_t *rs);
-static int termios_baud_rate(struct termios *term);
 
 static inline unsigned int readw(vir_bytes addr);
 static inline unsigned int serial_in(rs232_t *rs, int offset);
@@ -195,21 +146,12 @@ serial_out(rs232_t *rs, int offset, int val)
 static void
 rs_reset(rs232_t *rs)
 {
-	// u32_t syss;
-
-	// serial_out(rs, OMAP3_SYSC, UART_SYSC_SOFTRESET);
-
-	// /* Poll until done */
-	// do {
-	// 	syss = serial_in(rs, OMAP3_SYSS);
-	// } while (!(syss & UART_SYSS_RESETDONE));
 }
 
 static int
 rs_write(register tty_t *tp, int try)
 {
-/* (*devwrite)() routine for RS232. */
-
+	/* (*devwrite)() routine for RS232. */
 	rs232_t *rs = tp->tty_priv;
 	int r, count, ocount;
 
@@ -295,8 +237,7 @@ rs_write(register tty_t *tp, int try)
 static void
 rs_echo(tty_t *tp, int character)
 {
-/* Echo one character.  (Like rs_write, but only one character, optionally.) */
-
+	/* Echo one character.  (Like rs_write, but only one character, optionally.) */
 	rs232_t *rs = tp->tty_priv;
 	int count, ocount;
 
@@ -317,164 +258,16 @@ rs_echo(tty_t *tp, int character)
 static int
 rs_ioctl(tty_t *tp, int UNUSED(dummy))
 {
-/* Reconfigure the line as soon as the output has drained. */
+	/* Reconfigure the line as soon as the output has drained. */
 	rs232_t *rs = tp->tty_priv;
 
 	rs->drain = TRUE;
 	return 0;	/* dummy */
 }
 
-// static unsigned int
-// omap_get_divisor(rs232_t *rs, unsigned int baud)
-// {
-// /* Calculate divisor value. The 16750 has two oversampling modes to reach
-//  * high baud rates with little error rate (see table 17-1 in OMAP TRM).
-//  * Baud rates 460800, 921600, 1843200, and 3686400 use 13x oversampling,
-//  * the other rates 16x. The baud rate is calculated as follows:
-//  * baud rate = (functional clock / oversampling) / divisor.
-//  */
-
-// 	unsigned int oversampling;
-// 	assert(baud != 0);
-
-// 	switch(baud) {
-// 	case B460800:	/* Fall through */
-// 	case B921600:	/* Fall through */
-// #if 0
-// 	case B1843200:	/* Fall through */
-// 	case B3686400:	
-// #endif
-// 		oversampling = 13; break;
-// 	default:	oversampling = 16;
-// 	}
-
-// 	return (rs->uartclk / oversampling) / baud;
-// }
-
-static int
-termios_baud_rate(struct termios *term)
-{
-	int baud;
-	switch(term->c_ospeed) {
-	case B300: baud = 300; break;
-	case B600: baud = 600; break;
-	case B1200: baud = 1200; break;
-	case B2400: baud = 2400; break;
-	case B4800: baud = 4800; break;
-	case B9600: baud = 9600; break;
-	case B38400: baud = 38400; break;
-	case B57600: baud = 57600; break;
-	case B115200: baud = 115200; break;
-	case B0:
-	default:
-		/* Reset the speed to the default speed, then call ourselves
-		 * to convert the default speed to a baudrate. This call will
-		 * always return a value without inducing another recursive
-		 * call. */
-		term->c_ospeed = DFLT_BAUD;
-		baud = termios_baud_rate(term);
-	}
-
-	return baud;
-}
 static void rs_config(rs232_t *rs)
 {
-// /* Set various line control parameters for RS232 I/O.  */
-// 	tty_t *tp = rs->tty;
-// 	unsigned int divisor, efr, lcr, mcr, baud;
-
-// 	/* Fifo and DMA settings */
-// 	/* See OMAP35x TRM 17.5.1.1.2 */
-// 	lcr = serial_in(rs, OMAP3_LCR);				/* 1a */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_B);	/* 1b */
-// 	efr = serial_in(rs, OMAP3_EFR);				/* 2a */
-// 	serial_out(rs, OMAP3_EFR, efr | UART_EFR_ECB);		/* 2b */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_A);	/* 3  */
-// 	mcr = serial_in(rs, OMAP3_MCR);				/* 4a */
-// 	serial_out(rs, OMAP3_MCR, mcr | UART_MCR_TCRTLR);	/* 4b */
-// 	/* Set up FIFO  */
-// 	rs->fcr = 0;
-// 	/* Set FIFO interrupt trigger levels high */
-// 	rs->fcr |= (0x3 << OMAP_UART_FCR_RX_FIFO_TRIG_SHIFT);
-// 	rs->fcr |= (0x3 << OMAP_UART_FCR_TX_FIFO_TRIG_SHIFT);
-// 	rs->fcr |= UART_FCR_ENABLE_FIFO;
-// 	serial_out(rs, OMAP3_FCR, rs->fcr);			/* 5  */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_B);	/* 6  */
-// 	/* DMA triggers, not supported by this driver */	/* 7  */
-// 	rs->scr = OMAP_UART_SCR_RX_TRIG_GRANU1_MASK;
-// 	serial_out(rs, OMAP3_SCR, rs->scr);			/* 8  */
-// 	serial_out(rs, OMAP3_EFR, efr);				/* 9  */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_A);	/* 10 */
-// 	serial_out(rs, OMAP3_MCR, mcr);				/* 11 */
-// 	serial_out(rs, OMAP3_LCR, lcr);				/* 12 */
-
-// 	/* RS232 needs to know the xoff character, and if CTS works. */
-// 	rs->oxoff = tp->tty_termios.c_cc[VSTOP];
-// 	rs->cts = (tp->tty_termios.c_cflag & CLOCAL) ? UART_MSR_CTS : 0;
-// 	baud = termios_baud_rate(&tp->tty_termios);
-
-// 	/* Look up the 16750 rate divisor from the output speed. */
-// 	divisor = omap_get_divisor(rs, baud);
-// 	rs->dll = divisor & 0xFF;
-// 	rs->dlh = divisor >> 8;
-
-// 	/* Compute line control flag bits. */
-// 	lcr = 0;
-// 	if (tp->tty_termios.c_cflag & PARENB) {
-// 		lcr |= UART_LCR_PARITY;
-// 		if (!(tp->tty_termios.c_cflag & PARODD)) lcr |= UART_LCR_EPAR;
-// 	}
-// 	if (tp->tty_termios.c_cflag & CSTOPB) lcr |= UART_LCR_STOP;
-// 	switch(tp->tty_termios.c_cflag & CSIZE) {
-// 	case CS5:
-//  		lcr |= UART_LCR_WLEN5;
-// 		break;
-// 	case CS6:
-// 		lcr |= UART_LCR_WLEN6;
-// 		break;
-// 	case CS7:
-// 		lcr |= UART_LCR_WLEN7;
-// 		break;
-// 	default:
-// 	case CS8:
-// 		lcr |= UART_LCR_WLEN8;
-// 		break;
-// 	}
-
-// 	/* Lock out interrupts while setting the speed. The receiver register
-// 	 * is going to be hidden by the div_low register, but the input
-// 	 * interrupt handler relies on reading it to clear the interrupt and
-// 	 * avoid looping forever.
-// 	 */
-
-// 	if (sys_irqdisable(&rs->irq_hook_kernel_id) != OK)
-// 		panic("unable to disable interrupts");
-
-// 	/* Select the baud rate divisor registers and change the rate. */
-// 	/* See OMAP35x TRM 17.5.1.1.3 */
-// 	serial_out(rs, OMAP3_MDR1, OMAP_MDR1_DISABLE);		/* 1  */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_B);	/* 2  */
-// 	efr = serial_in(rs, OMAP3_EFR);				/* 3a */
-// 	serial_out(rs, OMAP3_EFR, efr | UART_EFR_ECB);		/* 3b */
-// 	serial_out(rs, OMAP3_LCR, 0);				/* 4  */
-// 	serial_out(rs, OMAP3_IER, 0);				/* 5  */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_B);	/* 6  */
-// 	serial_out(rs, OMAP3_DLL, rs->dll);			/* 7  */
-// 	serial_out(rs, OMAP3_DLH, rs->dlh);			/* 7  */
-// 	serial_out(rs, OMAP3_LCR, 0);				/* 8  */
-// 	serial_out(rs, OMAP3_IER, rs->ier);			/* 9  */
-// 	serial_out(rs, OMAP3_LCR, UART_LCR_CONF_MODE_B);	/* 10 */
-// 	serial_out(rs, OMAP3_EFR, efr);				/* 11 */
-// 	serial_out(rs, OMAP3_LCR, lcr);				/* 12 */
-// 	if (baud > 230400 && baud != 3000000)
-// 		serial_out(rs, OMAP3_MDR1, OMAP_MDR1_MODE13X);	/* 13 */
-// 	else
-// 		serial_out(rs, OMAP3_MDR1, OMAP_MDR1_MODE16X);
-	
 	rs->ostate = ODEVREADY | ORAW | OSWREADY;	/* reads MSR */
-// 	if ((tp->tty_termios.c_lflag & IXON) && rs->oxoff != _POSIX_VDISABLE)
-// 		rs->ostate &= ~ORAW;
-// 	(void) serial_in(rs, OMAP3_IIR);
 
 	/*
 	 * XXX: Disable FIFO otherwise only half of every received character
@@ -491,13 +284,12 @@ static void rs_config(rs232_t *rs)
 void
 rs_init(tty_t *tp)
 {
-/* Initialize RS232 for one line. */
-	register rs232_t *rs;
+	/* Initialize RS232 for one line. */
+	rs232_t *rs;
 	int line;
 	uart_port_t this_pl011;
 	char l[10];
 	struct minix_mem_range mr;
-	struct machine machine;
 
 	/* Associate RS232 and TTY structures. */
 	line = tp - &tty_table[NR_CONS];
@@ -518,26 +310,17 @@ rs_init(tty_t *tp)
 	/* Set up input queue. */
 	rs->ihead = rs->itail = rs->ibuf;
 
-	sys_getmachine(&machine);
-	
-	// if (BOARD_IS_BBXM(machine.board_id)){
-	// 	this_omap3 = dm37xx_ports[line];
-	// } else if (BOARD_IS_BB(machine.board_id)){
-	// 	this_omap3 = am335x_ports[line];
-	// } else {
-	// 	return;
-	// }
 	this_pl011 = bcm2835_ports[line];
 	if (this_pl011.base_addr == 0) return;
 
 	/* Configure memory access */
 	mr.mr_base = rs->phys_base;
-	mr.mr_limit = rs->phys_base + 0x100;
+	mr.mr_limit = rs->phys_base + 0x1000;
 	if (sys_privctl(SELF, SYS_PRIV_ADD_MEM, &mr) != OK) {
 		panic("Unable to request access to UART memory");
 	}
 	rs->phys_base = (vir_bytes) vm_map_phys(SELF,
-					(void *) this_pl011.base_addr, 0x100);
+					(void *) this_pl011.base_addr, 0x1000);
 	
 	if (rs->phys_base ==  (vir_bytes) MAP_FAILED) {
 		panic("Unable to request access to UART memory");
@@ -561,7 +344,8 @@ rs_init(tty_t *tp)
 	/* callback with irq line number */
 	rs->irq_hook_kernel_id = rs->irq_hook_id = line;
 
-	/* sys_irqsetpolicy modifies irq_hook_kernel_id. this modified id
+	/*
+	 * sys_irqsetpolicy modifies irq_hook_kernel_id. this modified id
 	 * needs to be used in sys_irqenable and similar calls.
 	 */
 	if (sys_irqsetpolicy(rs->irq, 0, &rs->irq_hook_kernel_id) != OK) {
@@ -573,14 +357,15 @@ rs_init(tty_t *tp)
 		}
 	}
 
-	/* When we get called back we get called back using the original 
+	/*
+	 * When we get called back we get called back using the original
 	 * hook_id bit set. e.g. if we register with hook_id 5 the callback
-	 * calls us with the 5 th bit set */
+	 * calls us with the 5 th bit set
+	 */
 	rs_irq_set |= (1 << (rs->irq_hook_id ));
 
 	/* Enable interrupts */
 	rs_reset(rs);
-	rs->ier = UART_IER_RLSI | UART_IER_RDI | UART_IER_MSI;
 	rs_config(rs);
 
 	/* Fill in TTY function hooks. */
@@ -596,9 +381,6 @@ rs_init(tty_t *tp)
 	tp->tty_close = rs_close;
 
 	serial_out(rs, PL011_IMSC, PL011_RXRIS);
-
-	/* Tell external device we are ready. */
-	/// istart(rs);
 }
 
 void
@@ -621,19 +403,13 @@ rs_interrupt(message *m)
 static int
 rs_icancel(tty_t *tp, int UNUSED(dummy))
 {
-/* Cancel waiting input. */
-	// rs232_t *rs = tp->tty_priv;
-
-	// rs->icount = 0;
-	// rs->itail = rs->ihead;
-	// istart(rs);
 	return 0;	/* dummy */
 }
 
 static int
 rs_ocancel(tty_t *tp, int UNUSED(dummy))
 {
-/* Cancel pending output. */
+	/* Cancel pending output. */
 	rs232_t *rs = tp->tty_priv;
 
 	rs->ostate &= ~(ODONE | OQUEUED);
@@ -646,8 +422,7 @@ rs_ocancel(tty_t *tp, int UNUSED(dummy))
 static int
 rs_read(tty_t *tp, int try)
 {
-/* Process characters from the circular input buffer. */
-
+	/* Process characters from the circular input buffer. */
 	rs232_t *rs = tp->tty_priv;
 	int icount, count, ostate;
 
@@ -675,7 +450,7 @@ rs_read(tty_t *tp, int try)
 		/* Perform input processing on (part of) the input buffer. */
 		if ((count = in_process(tp, rs->itail, count)) == 0) break;
 		rs->icount -= count;
-		// if (!rs->idevready && rs->icount < RS_ILOWWATER) istart(rs); /////////////////////////////////
+
 		if ((rs->itail += count) == bufend(rs->ibuf))
 			rs->itail = rs->ibuf;
 	}
@@ -686,10 +461,9 @@ rs_read(tty_t *tp, int try)
 static void
 rs_ostart(rs232_t *rs)
 {
-/* Tell RS232 there is something waiting in the output buffer. */
-
+	/* Tell RS232 there is something waiting in the output buffer. */
 	rs->ostate |= OQUEUED;
-	/*if (txready(rs))*/ write_chars(rs); //////////////////////////////////
+	write_chars(rs);
 
 	serial_out(rs, PL011_IMSC, PL011_TXRIS|PL011_RXRIS);
 }
@@ -697,24 +471,14 @@ rs_ostart(rs232_t *rs)
 static int
 rs_break_on(tty_t *tp, int UNUSED(dummy))
 {
-/* Raise break condition */
-	// rs232_t *rs = tp->tty_priv;
-	// unsigned int lsr;
-
-	// lsr = serial_in(rs, OMAP3_LSR);
-	// serial_out(rs, OMAP3_LSR, lsr | UART_LSR_BI);
+	/* Raise break condition */
 	return 0;	/* dummy */
 }
 
 static int
 rs_break_off(tty_t *tp, int UNUSED(dummy))
 {
-/* Clear break condition */
-	// rs232_t *rs = tp->tty_priv;
-	// unsigned int lsr;
-
-	// lsr = serial_in(rs, OMAP3_LSR);
-	// serial_out(rs, OMAP3_LSR, lsr & ~UART_LSR_BI);
+	/* Clear break condition */
 	return 0;	/* dummy */
 }
 
@@ -729,16 +493,7 @@ rs_open(tty_t *tp, int UNUSED(dummy))
 static int
 rs_close(tty_t *tp, int UNUSED(dummy))
 {
-/* The line is closed; optionally hang up. */
-	// rs232_t *rs = tp->tty_priv;
-
-	// if (tp->tty_termios.c_cflag & HUPCL) {
-	// 	serial_out(rs, OMAP3_MCR, UART_MCR_OUT2|UART_MCR_RTS);
-	// 	if (rs->ier & UART_IER_THRI) {
-	// 		rs->ier &= ~UART_IER_THRI;
-	// 		serial_out(rs, OMAP3_IER, rs->ier);
-	// 	}
-	// }
+	/* The line is closed; optionally hang up. */
 	return 0;	/* dummy */
 }
 
@@ -747,7 +502,7 @@ rs_close(tty_t *tp, int UNUSED(dummy))
 static void
 rs232_handler(struct rs232 *rs)
 {
-/* Handle interrupt of a UART port */
+	/* Handle interrupt of a UART port */
 	unsigned int ris;
 
 	ris = serial_in(rs, PL011_RIS);
@@ -802,11 +557,11 @@ read_chars(rs232_t *rs)
 static void
 write_chars(rs232_t *rs)
 {
-/* If there is output to do and everything is ready, do it (local device is
- * known ready).
- * Notify TTY when the buffer goes empty.
- */
-
+	/*
+	 * If there is output to do and everything is ready, do it (local device is
+	 * known ready).
+	 * Notify TTY when the buffer goes empty.
+	 */
 	while ((rs->ostate >= (OQUEUED | OSWREADY)) && ((serial_in(rs, PL011_FR) & PL011_TXFF) == 0)) {
 		/* Bit test allows ORAW and requires the others. */
 		serial_out(rs, PL011_DR, *rs->otail);
@@ -825,26 +580,4 @@ write_chars(rs232_t *rs)
 	}
 }
 
-static unsigned int
-check_modem_status(rs232_t *rs)
-{
-/* Check modem status */
-
-	unsigned int msr = 0;
-
-	// msr = serial_in(rs, OMAP3_MSR); /* Resets modem interrupt */
-	// if ((msr & (UART_MSR_DCD|UART_MSR_DDCD)) == UART_MSR_DDCD) {
-	// 	rs->ostate |= ODEVHUP;
-	// 	rs->tty->tty_events = 1;
-	// }
-
-	// if (!devready(rs))
-	// 	rs->ostate &= ~ODEVREADY;
-	// else
-	// 	rs->ostate |= ODEVREADY;
-
-	return msr;
-}
-
 #endif /* NR_RS_LINES > 0 */
-

@@ -52,6 +52,7 @@ fi
 
 /bin/service up /service/procfs || echo "WARNING: couldn't start procfs"
 
+/bin/service up /service/fb -dev /dev/fb0
 echo "End of ramdisk rc script"
 exec /bin/sh
 echo "Shell exited"

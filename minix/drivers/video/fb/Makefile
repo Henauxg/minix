@@ -10,9 +10,9 @@ SRCS+=	fb_edid.c fb.c
 SRCS+=	edid.c pickmode.c videomode.c vesagtf.c
 
 # Put this dir and the EDID headers (dev/videomode/*.h) in the search path.
-CPPFLAGS+= -I${.CURDIR} -I${NETBSDSRCDIR}/sys
+CPPFLAGS+= -I${.CURDIR} -I${NETBSDSRCDIR}/sys -g -O0
 
 DPADD+=	${LIBCHARDRIVER} ${LIBSYS}
-LDADD+=	-lchardriver -lsys
+LDADD+=	-lchardriver -lsys  -Ttext 0x6000000
 
 .include <minix.service.mk>
