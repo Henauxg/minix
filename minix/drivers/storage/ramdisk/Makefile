@@ -98,12 +98,16 @@ PROGRAMS+=		fb
 dir.fb:=	minix/drivers/video/fb
 PROGRAMS+=		gpio
 dir.gpio:=	minix/drivers/system/gpio
+PROGRAMS+=		i2c
+dir.i2c:=	minix/drivers/bus/i2c
 PROGRAMS+=		ls
 dir.ls:=	bin/ls
 PROGRAMS+=		cat
 dir.cat:=	bin/cat
 PROGRAMS+=		ps
 dir.ps:=	minix/commands/ps
+PROGRAMS+=		i2cscan
+dir.i2cscan:=	usr.sbin/i2cscan
 PROGRAMS+=		chmod
 dir.chmod:=	bin/chmod
 .endif # ${MACHINE_ARCH} == "earm"

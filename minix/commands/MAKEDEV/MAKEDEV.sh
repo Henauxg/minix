@@ -27,6 +27,7 @@ RAMDISK_DEVICES="
 	c1d6 c1d6p0 c1d6p0s0 c1d7 c1d7p0 c1d7p0s0
 	fb0
 	fd0 fd1 fd0p0 fd1p0
+	i2c-1 i2c-2 i2c-3
 	pci
 	ttyc1 ttyc2 ttyc3 tty00 tty01 tty02 tty03
 "
@@ -42,7 +43,6 @@ STD_DEVICES="
 	eepromb3s50 eepromb3s51 eepromb3s52 eepromb3s53
 	eepromb3s54 eepromb3s55 eepromb3s56 eepromb3s57
 	eth fb0 fbd filter hello
-	i2c-1 i2c-2 i2c-3
 	klog ptmx random
 	sht21b1s40 sht21b2s40 sht21b3s40
 	tsl2550b1s39 tsl2550b2s39 tsl2550b3s39

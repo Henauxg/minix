@@ -125,6 +125,7 @@ cp -r releasetools/rpi-firmware/* ${ROOT_DIR}
 
 # Write GPU config file
 cat <<EOF >${ROOT_DIR}/config.txt
+dtparam=i2c_arm=on
 [pi3]
 kernel=minix_rpi3.bin
 enable_uart=1

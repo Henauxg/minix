@@ -6,6 +6,7 @@ d--755 0 0
 		cat ---755 0 0 cat
 		ps ---755 0 0 ps
 		chmod ---755 0 0 chmod
+		i2cscan ---755 0 0 i2cscan
 #ifdef __i386__
 		cdprobe ---755 0 0 cdprobe
 #endif
@@ -35,6 +36,7 @@ d--755 0 0
 		mmc ---755 0 0 mmc
 		fb ---755 0 0 fb
 		gpio ---755 0 0 gpio
+		i2c ---755 0 0 i2c
 #endif
 		mfs ---755 0 0 mfs
 		procfs ---755 0 0 procfs

@@ -21,6 +21,7 @@
 
 /* SoC specific headers - 1 for each SoC */
 #include "omap_i2c.h"
+#include "bcm2835_i2c.h"
 
 /* local definitions */
 
@@ -421,6 +422,7 @@ lu_state_restore(void)
 static int
 sef_cb_init(int type, sef_init_info_t * UNUSED(info))
 {
+	printf("sef_cb_init: enter\n");
 	int r;
 	char regex[DS_MAX_KEYLEN];
 	struct machine machine;
@@ -431,7 +433,16 @@ sef_cb_init(int type, sef_init_info_t * UNUSED(info))
 		lu_state_restore();
 	}
 	
-	if (BOARD_IS_BBXM(machine.board_id) || BOARD_IS_BB(machine.board_id)){
+	if (BOARD_IS_RPI_2_B(machine.board_id) || BOARD_IS_RPI_3_B(machine.board_id)) {
+		/* Set callback and initialize the bus */
+		printf("sef_cb_init: appel à interface_setup\n");
+		r = bcm2835_interface_setup(&process, i2c_bus_id);
+		if (r != OK) {
+			printf("sef_cb_init: r not OK\n");
+			return r;
+		}
+	} else if (BOARD_IS_BBXM(machine.board_id) || BOARD_IS_BB(machine.board_id)){
+		printf("sef_cb_init: appel à interface_setup BB !\n");
 		/* Set callback and initialize the bus */
 		r = omap_interface_setup(&process, i2c_bus_id);
 		if (r != OK) {
@@ -504,6 +515,7 @@ env_parse_instance(void)
 int
 main(int argc, char *argv[])
 {
+	printf("i2c main: enter\n");
 	int r;
 
 	env_setargs(argc, argv);
@@ -514,8 +526,10 @@ main(int argc, char *argv[])
 	}
 
 	memset(i2cdev, '\0', sizeof(i2cdev));
+	printf("i2c main: sef_local_startup call\n");
 	sef_local_startup();
 	chardriver_task(&i2c_tab);
 
+	printf("i2c main: finished\n");
 	return OK;
 }
